@@ -1,0 +1,49 @@
+# Scenario 05: Fine-Grained File Permissions with ACLs
+
+## Problem
+A security audit flagged `/etc/resolv.conf` for incorrect permissions.
+Standard owner/group/other permissions weren't granular enough to
+meet the new requirements.
+
+## Environment
+- Target: App server
+- Requirements on `/etc/resolv.conf`:
+  - User `virat`: no permissions at all
+  - User `vivek`: read-only
+  - Group `sysadmin`: read/write
+
+## Solution
+```bash
+sudo setfacl -m u:virat:--- /etc/resolv.conf
+sudo setfacl -m u:vivek:r-- /etc/resolv.conf
+sudo setfacl -m g:sysadmin:rw- /etc/resolv.conf
+```
+
+## Verification
+```bash
+getfacl /etc/resolv.conf
+```
+Expected relevant lines:
+```
+user:virat:---
+user:vivek:r--
+group:sysadmin:rw-
+```
+
+## Key Concept
+ACLs extend standard Linux permissions (owner/group/other) by
+allowing rules for **specific additional users or groups**, not just
+the file's primary owner and group.
+
+Command structure:
+```
+setfacl -m [u|g]:name:permissions file
+```
+`---` = no access, `r--` = read only, `rw-` = read/write.
+
+## What I Learned
+- If a target group (e.g. `sysadmin`) doesn't exist yet, `setfacl`
+  fails -- check first with `getent group sysadmin`, create if needed
+  with `groupadd`.
+- Case sensitivity matters for usernames -- `Sarah` and `sarah` are
+  different accounts entirely.
