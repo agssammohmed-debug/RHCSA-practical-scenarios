@@ -1,0 +1,53 @@
+# Scenario 03: Permanently Disabling SELinux (Pre-Maintenance)
+
+## Problem
+Following a security audit, SELinux needed to be temporarily and
+permanently disabled on an app server ahead of a scheduled
+maintenance reboot -- without rebooting immediately or relying on
+runtime commands.
+
+## Environment
+- Target: App server (RHEL-based)
+- Requirement: SELinux must be `disabled` after the next reboot
+  (already scheduled), not right now.
+
+## Solution
+
+### Step 1 -- Install SELinux packages (if missing)
+```bash
+sudo yum install selinux-policy selinux-policy-targeted -y
+```
+
+### Step 2 -- Edit the persistent config file
+```bash
+sudo vi /etc/selinux/config
+```
+Change:
+```
+SELINUX=enforcing
+```
+to:
+```
+SELINUX=disabled
+```
+Save with `:wq`.
+
+### Step 3 -- Do NOT use setenforce or reboot
+The task explicitly required a **persistent** change only, verified
+via the config file -- not the live runtime state.
+
+## Key Concept: Runtime vs Persistent State
+| Method | Scope | Survives reboot? |
+|---|---|---|
+| `setenforce 0/1` | Runtime only | No -- reverts to config file value |
+| Editing `/etc/selinux/config` | Persistent | Yes |
+
+Same pattern as firewalld's `--permanent`/`--reload` split.
+
+## What I Learned
+- `/etc/selinux/config` won't exist until `selinux-policy` packages
+  are installed -- opening it with `vi` beforehand silently creates
+  a new empty file (shown as `[New]`), not an error.
+- Verification should read the config file directly
+  (`cat /etc/selinux/config`), not `sestatus`, when the task is about
+  persistent state.
