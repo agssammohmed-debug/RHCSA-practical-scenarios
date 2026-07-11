@@ -1,0 +1,45 @@
+# Scenario 04: Restricting Crontab Access (cron.allow / cron.deny)
+
+## Problem
+Only specific users should be permitted to create or modify cron
+jobs on an app server -- one user must be allowed, another explicitly
+denied.
+
+## Environment
+- Target: App server
+- Requirement: user `top` allowed to use crontab; user `kodekloud_gem`
+  denied.
+
+## Solution
+```bash
+sudo bash -c 'echo "top" >> /etc/cron.allow'
+```
+
+Since `/etc/cron.allow` now exists and contains only `top`, all other
+users (including `kodekloud_gem`) are automatically denied -- no need
+to touch `/etc/cron.deny`.
+
+## Key Concept: allow vs deny precedence
+| File | Behavior |
+|---|---|
+| `/etc/cron.allow` | If it exists, ONLY listed users are permitted |
+| `/etc/cron.deny`  | Used only if `cron.allow` does NOT exist -- lists users denied |
+
+**Critical rule:** if `cron.allow` exists, `cron.deny` is ignored
+entirely, even if it has entries.
+
+## Decision Guide
+- Allow a small number, deny everyone else → use `cron.allow`
+- Deny a small number, allow everyone else → use `cron.deny` (and
+  make sure `cron.allow` does not exist)
+
+## Verification
+```bash
+su - top -c "crontab -l"            # "no crontab for top" = allowed
+su - kodekloud_gem -c "crontab -l"  # "not allowed to use this program" = denied
+```
+
+## What I Learned
+- `sudo command > file` fails with permission denied because the
+  redirection runs with the *shell's* privileges, not `sudo`'s.
+  Fix: `sudo bash -c 'command > file'` or `command | sudo tee file`.
