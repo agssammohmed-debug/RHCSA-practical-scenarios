@@ -1,0 +1,37 @@
+# Scenario 06: Secure File Transfer Between Servers (scp)
+
+## Problem
+Sensitive data stored on a jump host needed to be transferred to an
+app server, since developers lacked direct access to app servers.
+
+## Environment
+- Source: jump host, file `/tmp/nautilus.txt.gpg`
+- Destination: App Server 2, path `/home/data/`
+- Each server has a **different** user account (checked via
+  infrastructure details table)
+
+## Solution
+```bash
+scp /tmp/nautilus.txt.gpg steve@stapp02:/home/data/
+```
+
+## Key Concept: scp path structure
+```
+scp [source] [user]@[remote-host]:[destination-path]
+```
+- If a side (source or destination) is the **machine you're currently
+  on**, just use a plain path -- no `user@host:` needed.
+- If a side is a **remote machine**, it needs `user@host:` prefix.
+
+## Common Mistakes (from experience)
+- `nautilus.txt/gpg` instead of `nautilus.txt.gpg` -- a slash instead
+  of a dot turns the filename into a nonexistent directory path.
+- Assuming the same username works across every server -- each app
+  server had a different user (`tony`, `steve`, `banner` for servers
+  1, 2, 3 respectively). Always verify against the infrastructure
+  details table before running the command.
+
+## What I Learned
+- Server hostnames and numbers (stapp01/02/03) are easy to mistype
+  under time pressure -- always double-check against the reference
+  table rather than typing from memory.
